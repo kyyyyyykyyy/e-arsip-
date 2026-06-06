@@ -1,0 +1,44 @@
+# --- KONEKSI & AUTH SENSITIF (WAJIB) ---
+.env
+.env.*
+!.env.example
+auth.json
+*.pem
+*.key
+
+# --- DEPENDENSI & BUILD (WAJIB) ---
+/node_modules
+/vendor
+/public/build
+/public/hot
+/public/storage
+/public/mix-manifest.json
+/public/fonts-manifest.dev.json
+
+# --- STORAGE & LOGS (WAJIB) ---
+/storage/*.key
+/storage/framework/cache/*
+/storage/framework/sessions/*
+/storage/framework/views/*
+/storage/logs/*
+!/storage/.gitignore
+!/storage/framework/.gitignore
+!/storage/framework/cache/.gitignore
+!/storage/logs/.gitignore
+
+# --- OS & EDITOR (WAJIB) ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+.nova/
+.zed/
+
+# --- LAIN-LAIN ---
+Homestead.json
+Homestead.yaml
+.phpunit.result.cache
+.phpunit.cache
+/.codex
+/.cursor/
+*.log
