@@ -26,7 +26,7 @@ const addForm = useForm({
     name: '',
     email: '',
     password: '',
-    role: 'user',
+    role: 'viewer', // Diperbaiki: ganti 'user' jadi 'viewer'
 });
 
 const openAddModal = () => { isAddModalOpen.value = true; };
@@ -52,7 +52,7 @@ const editForm = useForm({
     name: '',
     email: '',
     password: '', // Kosong kalau nggak mau ganti password
-    role: 'user',
+    role: 'viewer', // Diperbaiki: ganti 'user' jadi 'viewer'
 });
 
 const openEditModal = (user) => {
@@ -60,7 +60,7 @@ const openEditModal = (user) => {
     editForm.name = user.name;
     editForm.email = user.email;
     editForm.role = user.role;
-    editForm.password = ''; 
+    editForm.password = '';
     editForm.clearErrors();
     isEditModalOpen.value = true;
 };
@@ -95,7 +95,7 @@ const hapusUser = (id) => {
 
     <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-6 relative">
-            
+
             <div v-if="$page.props.flash && $page.props.flash.message" :class="$page.props.flash.message.includes('Error') ? 'bg-red-50 border-red-200 text-red-700' : 'bg-emerald-50 border-emerald-200 text-emerald-700'" class="mb-6 p-4 rounded-lg border flex items-center shadow-sm">
                 <svg v-if="$page.props.flash.message.includes('Error')" class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
                 <svg v-else class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -137,7 +137,7 @@ const hapusUser = (id) => {
                         <tbody class="divide-y divide-slate-100">
                             <tr v-for="(u, index) in users" :key="u.id" class="hover:bg-slate-50 transition-colors">
                                 <td class="py-4 px-6 text-sm text-slate-500 font-medium">{{ index + 1 }}</td>
-                                
+
                                 <td class="py-4 px-6">
                                     <div class="flex flex-col">
                                         <span class="text-sm font-bold text-slate-800">{{ u.name }}</span>
@@ -146,11 +146,15 @@ const hapusUser = (id) => {
                                 </td>
 
                                 <td class="py-4 px-6">
-                                    <span v-if="u.role === 'superadmin'" class="px-3 py-1 bg-amber-100 text-amber-700 border border-amber-200 text-xs font-bold rounded-full uppercase tracking-wide">
-                                        Super Admin
+                                    <!-- Perbaikan: sesuaikan tampilan badge dengan role yang benar -->
+                                    <span v-if="u.role === 'admin'" class="px-3 py-1 bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold rounded-full uppercase tracking-wide">
+                                        Admin
                                     </span>
-                                    <span v-else class="px-3 py-1 bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold rounded-full uppercase tracking-wide">
+                                    <span v-else-if="u.role === 'viewer'" class="px-3 py-1 bg-blue-100 text-blue-700 border border-blue-200 text-xs font-bold rounded-full uppercase tracking-wide">
                                         Pegawai (User)
+                                    </span>
+                                    <span v-else class="px-3 py-1 bg-gray-100 text-gray-700 border border-gray-200 text-xs font-bold rounded-full uppercase tracking-wide">
+                                        {{ u.role }}
                                     </span>
                                 </td>
 
@@ -158,7 +162,7 @@ const hapusUser = (id) => {
                                     <button @click="openEditModal(u)" class="inline-flex items-center p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors border border-blue-200 hover:border-transparent" title="Edit Akun">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
                                     </button>
-                                    
+
                                     <button v-if="u.id !== $page.props.auth.user.id" @click="hapusUser(u.id)" class="inline-flex items-center p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-colors border border-red-200 hover:border-transparent" title="Hapus Akun">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                     </button>
@@ -202,8 +206,8 @@ const hapusUser = (id) => {
                                 <div>
                                     <label class="block text-sm font-semibold text-slate-700 mb-1">Hak Akses (Role)</label>
                                     <select v-model="addForm.role" class="w-full border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                                        <option value="user">Pegawai Biasa (User)</option>
-                                        <option value="superadmin">Super Admin</option>
+                                        <option value="viewer">Pegawai Biasa (User)</option>
+                                        <option value="admin">Admin</option>
                                     </select>
                                 </div>
                                 <div class="pt-4 flex justify-end gap-3">
@@ -241,8 +245,8 @@ const hapusUser = (id) => {
                                 <div>
                                     <label class="block text-sm font-semibold text-slate-700 mb-1">Hak Akses (Role)</label>
                                     <select v-model="editForm.role" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500">
-                                        <option value="user">Pegawai Biasa (User)</option>
-                                        <option value="superadmin">Super Admin</option>
+                                        <option value="viewer">Pegawai Biasa (User)</option>
+                                        <option value="admin">Admin</option>
                                     </select>
                                 </div>
                                 <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 mt-2">

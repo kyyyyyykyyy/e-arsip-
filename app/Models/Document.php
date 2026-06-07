@@ -16,9 +16,7 @@ class Document extends Model
         'title',
         'category',
         'document_date',
-        'origin_office',      // Kolom baru
-        'destination_office', // Kolom baru
-        'destination_field',  // Kolom baru
+        'bidang',
         'description',
         'file_path',
     ];

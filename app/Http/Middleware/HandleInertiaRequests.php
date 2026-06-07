@@ -27,18 +27,20 @@ class HandleInertiaRequests extends Middleware
      *
      * @return array<string, mixed>
      */
-    public function share(Request $request): array
+  public function share(Request $request): array
     {
-        return [
-            ...parent::share($request),
+        return array_merge(parent::share($request), [
             'auth' => [
-                'user' => $request->user(),
+                'user' => $request->user() ? [
+                    'id' => $request->user()->id,
+                    'name' => $request->user()->name,
+                    'email' => $request->user()->email,
+                    'role' => $request->user()->role, // PENTING: Ini yang dibaca oleh v-if="user.role === 'admin'"
+                ] : null,
             ],
-            // --- JEMBATAN FLASH MESSAGE (Notifikasi Neon) ---
             'flash' => [
                 'message' => fn () => $request->session()->get('message')
             ],
-            // ------------------------------------------------
-        ];
+        ]);
     }
 }

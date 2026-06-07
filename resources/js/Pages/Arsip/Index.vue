@@ -1,12 +1,17 @@
 <script setup>
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout.vue';
-import { Head, router, useForm, Link } from '@inertiajs/vue3'; // <-- Tambah Link di sini
-import { ref, watch } from 'vue';
+import { Head, router, useForm, Link, usePage } from '@inertiajs/vue3'; 
+import { ref, watch, computed } from 'vue';
 
 const props = defineProps({
-    documents: Object, // <-- Berubah jadi Object karena pakai Pagination
+    documents: Object,
     filters: Object,
 });
+
+// Ambil data user yang lagi login untuk ngecek Role (Admin vs Viewer)
+const page = usePage();
+const currentUser = computed(() => page.props.auth.user);
+const isAdmin = computed(() => currentUser.value.role === 'admin');
 
 const search = ref(props.filters?.search || '');
 const category = ref(props.filters?.category || 'Semua Arsip');
@@ -29,27 +34,28 @@ const hapusArsip = (id) => {
     }
 };
 
+// PERUBAHAN: Warna kategori SIDEPPA
 const getCategoryColor = (cat) => {
-    if (cat === 'Surat Masuk') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
-    if (cat === 'Surat Keluar') return 'bg-amber-100 text-amber-700 border-amber-200';
-    if (cat === 'Internal') return 'bg-purple-100 text-purple-700 border-purple-200';
+    if (cat === 'DPA') return 'bg-blue-100 text-blue-700 border-blue-200';
+    if (cat === 'RKA') return 'bg-emerald-100 text-emerald-700 border-emerald-200';
+    if (cat === 'Renja') return 'bg-amber-100 text-amber-700 border-amber-200';
+    if (cat === 'Laporan Bulanan') return 'bg-purple-100 text-purple-700 border-purple-200';
+    if (cat === 'Laporan Triwulanan') return 'bg-indigo-100 text-indigo-700 border-indigo-200';
     return 'bg-slate-100 text-slate-700 border-slate-200';
 };
 
 // ==========================================
-// LOGIKA MODAL EDIT ARSIP
+// LOGIKA MODAL EDIT ARSIP (KHUSUS ADMIN)
 // ==========================================
 const isEditModalOpen = ref(false);
 const editForm = useForm({
     id: '',
     document_number: '',
     title: '',
-    category: 'Surat Masuk',
+    category: 'DPA',
     document_date: '',
-    origin_office: '',
-    destination_office: '',
-    destination_field: '',
-    file: null, // Kosong saat awal dibuka
+    bidang: '', // PERUBAHAN: Menggunakan kolom bidang
+    file: null, 
 });
 
 const openEditModal = (doc) => {
@@ -58,10 +64,8 @@ const openEditModal = (doc) => {
     editForm.title = doc.title;
     editForm.category = doc.category;
     editForm.document_date = doc.document_date;
-    editForm.origin_office = doc.origin_office || '';
-    editForm.destination_office = doc.destination_office || '';
-    editForm.destination_field = doc.destination_field || '';
-    editForm.file = null; // Reset file input
+    editForm.bidang = doc.bidang || ''; 
+    editForm.file = null; 
     editForm.clearErrors();
     isEditModalOpen.value = true;
 };
@@ -85,7 +89,7 @@ const submitEdit = () => {
 </script>
 
 <template>
-    <Head title="Data Arsip" />
+    <Head title="Data Arsip SIDEPPA" />
 
     <AuthenticatedLayout>
         <div class="max-w-7xl mx-auto py-6 relative">
@@ -98,8 +102,8 @@ const submitEdit = () => {
             <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 mb-6">
                 <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
                     <div>
-                        <h2 class="text-2xl font-extrabold text-slate-800">Manajemen Data Arsip</h2>
-                        <p class="text-sm text-slate-500 mt-1">Kelola, cari, dan filter seluruh dokumen arsip digital instansi.</p>
+                        <h2 class="text-2xl font-extrabold text-slate-800">Manajemen Pangkalan Data</h2>
+                        <p class="text-sm text-slate-500 mt-1">Sistem Informasi Digital Perencanaan dan Pelaporan.</p>
                     </div>
 
                     <div class="flex flex-col sm:flex-row gap-3">
@@ -107,13 +111,15 @@ const submitEdit = () => {
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
                             </div>
-                            <input v-model="search" type="text" placeholder="Cari Nomor / Judul Surat..." class="pl-10 pr-4 py-2 w-full sm:w-64 border border-slate-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500">
+                            <input v-model="search" type="text" placeholder="Cari Dokumen..." class="pl-10 pr-4 py-2 w-full sm:w-64 border border-slate-300 rounded-lg text-sm focus:ring-amber-500 focus:border-amber-500">
                         </div>
-                        <select v-model="category" class="py-2 pl-3 pr-10 w-full sm:w-40 border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-amber-500 focus:border-amber-500 cursor-pointer">
+                        <select v-model="category" class="py-2 pl-3 pr-10 w-full sm:w-44 border border-slate-300 rounded-lg text-sm text-slate-700 focus:ring-amber-500 focus:border-amber-500 cursor-pointer">
                             <option value="Semua Arsip">Semua Kategori</option>
-                            <option value="Surat Masuk">Surat Masuk</option>
-                            <option value="Surat Keluar">Surat Keluar</option>
-                            <option value="Internal">Internal</option>
+                            <option value="DPA">DPA</option>
+                            <option value="RKA">RKA</option>
+                            <option value="Renja">Renja</option>
+                            <option value="Laporan Bulanan">Laporan Bulanan</option>
+                            <option value="Laporan Triwulanan">Laporan Triwulanan</option>
                         </select>
                     </div>
                 </div>
@@ -125,8 +131,8 @@ const submitEdit = () => {
                         <thead>
                             <tr class="bg-slate-50 border-b border-slate-200">
                                 <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider w-16">No</th>
-                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Identitas Surat</th>
-                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Tujuan / Asal</th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Identitas Dokumen</th>
+                                <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Asal Bidang</th>
                                 <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider">Kategori</th>
                                 <th class="py-4 px-6 text-xs font-bold text-slate-500 uppercase tracking-wider text-right">Aksi</th>
                             </tr>
@@ -150,10 +156,9 @@ const submitEdit = () => {
                                 </td>
 
                                 <td class="py-4 px-6">
-                                    <div class="text-sm text-slate-700 font-medium">
-                                        <span v-if="doc.category === 'Surat Masuk'" class="text-emerald-600">Dari: {{ doc.origin_office || '-' }}</span>
-                                        <span v-else-if="doc.category === 'Surat Keluar'" class="text-amber-600">Ke: {{ doc.destination_office || '-' }}</span>
-                                        <span v-else class="text-purple-600">Bidang: {{ doc.destination_field || '-' }}</span>
+                                    <div class="text-sm text-slate-700 font-medium flex items-center">
+                                        <svg class="w-4 h-4 mr-1.5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path></svg>
+                                        {{ doc.bidang || '-' }}
                                     </div>
                                 </td>
 
@@ -168,19 +173,25 @@ const submitEdit = () => {
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
                                     </a>
 
-                                    <button @click="openEditModal(doc)" class="inline-flex items-center p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors border border-blue-200 hover:border-transparent" title="Edit Data">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-                                    </button>
+                                    <template v-if="isAdmin">
+                                        <button @click="openEditModal(doc)" class="inline-flex items-center p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition-colors border border-blue-200 hover:border-transparent" title="Edit Data">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+                                        </button>
 
-                                    <button @click="hapusArsip(doc.id)" class="inline-flex items-center p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-colors border border-red-200 hover:border-transparent" title="Hapus Permanen">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
-                                    </button>
+                                        <button @click="hapusArsip(doc.id)" class="inline-flex items-center p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition-colors border border-red-200 hover:border-transparent" title="Hapus Permanen">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </template>
                                 </td>
                             </tr>
 
                             <tr v-if="documents.data.length === 0">
                                 <td colspan="5" class="py-16 text-center">
-                                    <p class="text-slate-500 font-medium text-lg">Belum ada arsip ditemukan.</p>
+                                    <div class="inline-flex items-center justify-center w-16 h-16 rounded-full bg-slate-100 mb-4">
+                                        <svg class="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path></svg>
+                                    </div>
+                                    <p class="text-slate-500 font-medium text-lg">Pangkalan data arsip kosong.</p>
+                                    <p class="text-slate-400 text-sm mt-1">Belum ada dokumen Perencanaan & Pelaporan yang diunggah.</p>
                                 </td>
                             </tr>
 
@@ -192,7 +203,7 @@ const submitEdit = () => {
                     <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                         <div>
                             <p class="text-sm text-slate-500">
-                                Menampilkan <span class="font-bold text-slate-800">{{ documents.from || 0 }}</span> sampai <span class="font-bold text-slate-800">{{ documents.to || 0 }}</span> dari <span class="font-bold text-slate-800">{{ documents.total }}</span> arsip.
+                                Menampilkan <span class="font-bold text-slate-800">{{ documents.from || 0 }}</span> sampai <span class="font-bold text-slate-800">{{ documents.to || 0 }}</span> dari <span class="font-bold text-slate-800">{{ documents.total }}</span> dokumen.
                             </p>
                         </div>
                         <div>
@@ -205,7 +216,7 @@ const submitEdit = () => {
                         </div>
                     </div>
                 </div>
-                </div>
+            </div>
 
             <transition name="modal-fade">
                 <div v-if="isEditModalOpen" class="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-0">
@@ -215,7 +226,7 @@ const submitEdit = () => {
                         <div class="px-6 py-4 border-b border-slate-100 bg-slate-50 flex justify-between items-center">
                             <h3 class="text-lg font-bold text-slate-800 flex items-center">
                                 <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
-                                Edit Dokumen Arsip
+                                Edit Dokumen SIDEPPA
                             </h3>
                             <button @click="closeEditModal" class="text-slate-400 hover:text-red-500 transition-colors">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
@@ -226,46 +237,40 @@ const submitEdit = () => {
                             <form @submit.prevent="submitEdit" class="space-y-5">
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
                                     <div>
-                                        <label class="block text-sm font-semibold text-slate-700 mb-1">Nomor Surat</label>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-1">Nomor Dokumen</label>
                                         <input v-model="editForm.document_number" type="text" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm" required>
                                         <div v-if="editForm.errors.document_number" class="text-red-500 text-xs mt-1">{{ editForm.errors.document_number }}</div>
                                     </div>
                                     <div>
-                                        <label class="block text-sm font-semibold text-slate-700 mb-1">Tanggal Surat</label>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-1">Tanggal Dokumen</label>
                                         <input v-model="editForm.document_date" type="date" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm" required>
                                         <div v-if="editForm.errors.document_date" class="text-red-500 text-xs mt-1">{{ editForm.errors.document_date }}</div>
                                     </div>
                                 </div>
 
                                 <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-1">Perihal / Judul</label>
+                                    <label class="block text-sm font-semibold text-slate-700 mb-1">Nama Kegiatan / Judul Laporan</label>
                                     <input v-model="editForm.title" type="text" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm" required>
                                     <div v-if="editForm.errors.title" class="text-red-500 text-xs mt-1">{{ editForm.errors.title }}</div>
                                 </div>
 
-                                <div>
-                                    <label class="block text-sm font-semibold text-slate-700 mb-1">Kategori Arsip</label>
-                                    <select v-model="editForm.category" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-slate-50">
-                                        <option value="Surat Masuk">Surat Masuk</option>
-                                        <option value="Surat Keluar">Surat Keluar</option>
-                                        <option value="Internal">Internal</option>
-                                    </select>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-5">
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-1">Kategori Dokumen</label>
+                                        <select v-model="editForm.category" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm bg-slate-50">
+                                            <option value="DPA">DPA</option>
+                                            <option value="RKA">RKA</option>
+                                            <option value="Renja">Renja</option>
+                                            <option value="Laporan Bulanan">Laporan Bulanan</option>
+                                            <option value="Laporan Triwulanan">Laporan Triwulanan</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-sm font-semibold text-slate-700 mb-1">Bidang Asal</label>
+                                        <input v-model="editForm.bidang" type="text" class="w-full border-slate-300 rounded-lg focus:ring-amber-500 focus:border-amber-500 text-sm" placeholder="Contoh: Bidang Trantibum" required>
+                                        <div v-if="editForm.errors.bidang" class="text-red-500 text-xs mt-1">{{ editForm.errors.bidang }}</div>
+                                    </div>
                                 </div>
-
-                                <transition name="fade" mode="out-in">
-                                    <div v-if="editForm.category === 'Surat Masuk'" key="masuk">
-                                        <label class="block text-sm font-semibold text-emerald-700 mb-1">Asal Surat Instansi</label>
-                                        <input v-model="editForm.origin_office" type="text" class="w-full border-emerald-200 bg-emerald-50 rounded-lg text-sm">
-                                    </div>
-                                    <div v-else-if="editForm.category === 'Surat Keluar'" key="keluar">
-                                        <label class="block text-sm font-semibold text-amber-700 mb-1">Tujuan Instansi</label>
-                                        <input v-model="editForm.destination_office" type="text" class="w-full border-amber-200 bg-amber-50 rounded-lg text-sm">
-                                    </div>
-                                    <div v-else-if="editForm.category === 'Internal'" key="internal">
-                                        <label class="block text-sm font-semibold text-purple-700 mb-1">Tujuan Bidang</label>
-                                        <input v-model="editForm.destination_field" type="text" class="w-full border-purple-200 bg-purple-50 rounded-lg text-sm">
-                                    </div>
-                                </transition>
 
                                 <div class="bg-blue-50 p-4 rounded-lg border border-blue-100">
                                     <label class="block text-sm font-semibold text-blue-800 mb-1">Ganti File Dokumen? (Opsional)</label>

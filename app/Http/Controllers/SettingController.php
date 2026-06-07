@@ -11,7 +11,8 @@ class SettingController extends Controller
 {
     public function index()
     {
-        if (auth()->user()->role !== 'superadmin') {
+        // Kunci pintu: Cuma Admin yang boleh akses Pengaturan
+        if (auth()->user()->role !== 'admin') {
             abort(403, 'Akses Ditolak!');
         }
 
@@ -25,7 +26,8 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
-        if (auth()->user()->role !== 'superadmin') {
+        // Kunci pintu: Cuma Admin yang boleh ubah Pengaturan
+        if (auth()->user()->role !== 'admin') {
             abort(403, 'Akses Ditolak!');
         }
 

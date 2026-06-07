@@ -14,18 +14,18 @@ return new class extends Migration
         Schema::create('documents', function (Blueprint $table) {
             $table->id();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete(); // Tracking siapa yang upload
-            $table->string('document_number')->unique(); // Nomor surat, wajib unik
-            $table->string('title'); // Judul atau perihal surat
-            $table->enum('category', ['Surat Masuk', 'Surat Keluar', 'Internal']); // Kategori arsip
-            $table->date('document_date'); // Tanggal fisik surat
+            $table->string('document_number')->unique(); // Nomor DPA/RKA/Surat Laporan
+            $table->string('title'); // Judul atau Nama Kegiatan
             
-            // Kolom spesifik Surat Satpol PP
-            $table->string('origin_office')->nullable(); // Asal Surat
-            $table->string('destination_office')->nullable(); // Tujuan Instansi
-            $table->string('destination_field')->nullable(); // Tujuan Bidang
+            // PERUBAHAN: Kategori diubah total khusus untuk Perencanaan & Pelaporan SIDEPPA
+            $table->enum('category', ['DPA', 'RKA', 'Renja', 'Laporan Bulanan', 'Laporan Triwulanan']); 
             
+            // PERUBAHAN: Mengganti kolom persuratan menjadi asal "Bidang" di internal Satpol PP
+            $table->string('bidang'); 
+            
+            $table->date('document_date'); // Tanggal Pengesahan atau Pelaporan
             $table->text('description')->nullable(); // Keterangan tambahan
-            $table->string('file_path'); // Lokasi aman file
+            $table->string('file_path'); // Lokasi aman file di Cloud / Storage
             $table->timestamps();
         });
     }

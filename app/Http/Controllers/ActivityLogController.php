@@ -10,8 +10,8 @@ class ActivityLogController extends Controller
 {
     public function index()
     {
-        // Kunci pintu: Cuma Super Admin yang boleh lihat CCTV ini!
-        if (auth()->user()->role !== 'superadmin') {
+        // Kunci pintu: Cuma Admin yang boleh lihat CCTV ini! (diperbaiki dari 'superadmin' → 'admin')
+        if (auth()->user()->role !== 'admin') {
             abort(403, 'Akses Ditolak!');
         }
 
@@ -22,4 +22,4 @@ class ActivityLogController extends Controller
             'logs' => $logs
         ]);
     }
-}
+}   

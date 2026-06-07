@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use App\Http\Requests\StoreDocumentRequest;
 
 class DocumentController extends Controller
 {
@@ -35,36 +34,42 @@ class DocumentController extends Controller
             $query->where('category', $request->category);
         }
 
-        // PERUBAHAN PAGINATION DI SINI
         return Inertia::render('Arsip/Index', [
             'documents' => $query->paginate(10)->withQueryString(),
             'filters' => $request->only(['search', 'category']) 
         ]);
     }
 
-    public function store(StoreDocumentRequest $request)
+    public function store(Request $request)
     {
-        $data = $request->validated();
+        // PENGGUNAAN VALIDASI LANGSUNG (Menggantikan StoreDocumentRequest yang lama)
+        $validated = $request->validate([
+            'document_number' => 'required|string|unique:documents,document_number',
+            'title' => 'required|string|max:255',
+            'category' => 'required|in:DPA,RKA,Renja,Laporan Bulanan,Laporan Triwulanan',
+            'document_date' => 'required|date',
+            'bidang' => 'required|string|max:255',
+            'description' => 'nullable|string',
+            'file' => 'required|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,zip,rar|max:10240',
+        ]);
+
         $file = $request->file('file');
-        
         $filePath = $file->store('private/documents');
 
         Document::create([
             'user_id' => Auth::id(),
-            'document_number' => $data['document_number'],
-            'title' => $data['title'],
-            'category' => $data['category'],
-            'document_date' => $data['document_date'],
-            'origin_office' => $request->origin_office,
-            'destination_office' => $request->destination_office,
-            'destination_field' => $request->destination_field,
-            'description' => $data['description'] ?? null,
+            'document_number' => $validated['document_number'],
+            'title' => $validated['title'],
+            'category' => $validated['category'],
+            'document_date' => $validated['document_date'],
+            'bidang' => $validated['bidang'],
+            'description' => $validated['description'] ?? null,
             'file_path' => $filePath,
         ]);
 
-        ActivityLog::catat('Upload Arsip', 'Mengunggah dokumen baru bernomor: ' . $data['document_number']);
+        ActivityLog::catat('Upload Arsip', 'Mengunggah dokumen perencanaan/pelaporan baru bernomor: ' . $validated['document_number']);
 
-        return redirect()->back()->with('message', 'Dokumen berhasil diarsipkan secara aman!');
+        return redirect()->back()->with('message', 'Dokumen SIDEPPA berhasil diarsipkan secara aman!');
     }
 
     public function destroy(Document $document)
@@ -98,11 +103,9 @@ class DocumentController extends Controller
         $validated = $request->validate([
             'document_number' => 'required|string|unique:documents,document_number,' . $document->id,
             'title' => 'required|string|max:255',
-            'category' => 'required|in:Surat Masuk,Surat Keluar,Internal',
+            'category' => 'required|in:DPA,RKA,Renja,Laporan Bulanan,Laporan Triwulanan',
             'document_date' => 'required|date',
-            'origin_office' => 'nullable|string',
-            'destination_office' => 'nullable|string',
-            'destination_field' => 'nullable|string',
+            'bidang' => 'required|string|max:255',
             'file' => 'nullable|file|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,zip,rar|max:10240',
         ]);
 
@@ -111,9 +114,7 @@ class DocumentController extends Controller
             'title' => $validated['title'],
             'category' => $validated['category'],
             'document_date' => $validated['document_date'],
-            'origin_office' => $validated['origin_office'] ?? null,
-            'destination_office' => $validated['destination_office'] ?? null,
-            'destination_field' => $validated['destination_field'] ?? null,
+            'bidang' => $validated['bidang'],
         ];
 
         if ($request->hasFile('file')) {
@@ -130,34 +131,34 @@ class DocumentController extends Controller
         return back()->with('message', 'Data arsip berhasil diperbarui!');
     }
 
-    public function laporan(Request $request)
-    {
-        $documents = [];
-        $stats = [
-            'total' => 0,
-            'masuk' => 0,
-            'keluar' => 0,
-            'internal' => 0
-        ];
-        
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $documents = Document::with('user')
-                ->whereBetween('document_date', [$request->start_date, $request->end_date])
-                ->orderBy('document_date', 'asc')
-                ->get();
+   public function laporan(Request $request)
+{
+    $documents = collect([]); // Inisialisasi sebagai collection kosong
+    $stats = [
+        'total' => 0,
+        'dpa_rka' => 0,
+        'renja' => 0,
+        'laporan' => 0
+    ];
 
-            $stats['total'] = $documents->count();
-            $stats['masuk'] = $documents->where('category', 'Surat Masuk')->count();
-            $stats['keluar'] = $documents->where('category', 'Surat Keluar')->count();
-            $stats['internal'] = $documents->where('category', 'Internal')->count();
-        }
+    if ($request->filled('start_date') && $request->filled('end_date')) {
+        $documents = Document::with('user')
+            ->whereBetween('document_date', [$request->start_date, $request->end_date])
+            ->orderBy('document_date', 'asc')
+            ->get();
 
-        return Inertia::render('Laporan/Index', [
-            'documents' => $documents,
-            'filters' => $request->only(['start_date', 'end_date']),
-            'stats' => $stats
-        ]);
+        $stats['total'] = $documents->count();
+        $stats['dpa_rka'] = $documents->whereIn('category', ['DPA', 'RKA'])->count();
+        $stats['renja'] = $documents->where('category', 'Renja')->count();
+        $stats['laporan'] = $documents->whereIn('category', ['Laporan Bulanan', 'Laporan Triwulanan'])->count();
     }
+
+    return Inertia::render('Laporan/Index', [
+        'documents' => $documents,
+        'filters' => $request->only(['start_date', 'end_date']),
+        'stats' => $stats
+    ]);
+}
 
     public function export(Request $request)
     {
@@ -166,14 +167,14 @@ class DocumentController extends Controller
             'end_date' => 'required|date|after_or_equal:start_date',
         ]);
 
-        ActivityLog::catat('Ekspor Excel', 'Mengunduh laporan rekapitulasi arsip tanggal ' . $request->start_date . ' s/d ' . $request->end_date);
+        ActivityLog::catat('Ekspor Excel', 'Mengunduh laporan rekapitulasi SIDEPPA tanggal ' . $request->start_date . ' s/d ' . $request->end_date);
 
         $documents = Document::with('user')
             ->whereBetween('document_date', [$request->start_date, $request->end_date])
             ->orderBy('document_date', 'asc')
             ->get();
 
-        $fileName = 'Laporan_Arsip_' . $request->start_date . '_sd_' . $request->end_date . '.csv';
+        $fileName = 'Laporan_SIDEPPA_' . $request->start_date . '_sd_' . $request->end_date . '.csv';
 
         $headers = array(
             "Content-type"        => "text/csv; charset=UTF-8",
@@ -183,7 +184,7 @@ class DocumentController extends Controller
             "Expires"             => "0"
         );
 
-        $columns = array('No', 'Nomor Surat', 'Perihal / Judul', 'Kategori', 'Tanggal Surat', 'Keterangan', 'Diupload Oleh');
+        $columns = array('No', 'Nomor Dokumen', 'Nama Kegiatan / Judul', 'Kategori', 'Tanggal', 'Bidang', 'Diupload Oleh');
 
         $callback = function() use($documents, $columns) {
             $file = fopen('php://output', 'w');
@@ -192,21 +193,16 @@ class DocumentController extends Controller
 
             $row = 1;
             foreach ($documents as $doc) {
-                $keterangan = '-';
-                if ($doc->category == 'Surat Masuk') $keterangan = 'Dari: ' . $doc->origin_office;
-                elseif ($doc->category == 'Surat Keluar') $keterangan = 'Ke: ' . $doc->destination_office;
-                elseif ($doc->category == 'Internal') $keterangan = 'Bidang: ' . $doc->destination_field;
-
-                $nomor_surat_text = " " . $doc->document_number;
-                $tanggal_surat_text = " " . date('d-m-Y', strtotime($doc->document_date));
+                $nomor_dokumen_text = " " . $doc->document_number;
+                $tanggal_text = " " . date('d-m-Y', strtotime($doc->document_date));
 
                 fputcsv($file, array(
                     $row++,
-                    $nomor_surat_text,
+                    $nomor_dokumen_text,
                     $doc->title,
                     $doc->category,
-                    $tanggal_surat_text,
-                    $keterangan,
+                    $tanggal_text,
+                    $doc->bidang,
                     $doc->user->name
                 ), ';');
             }
