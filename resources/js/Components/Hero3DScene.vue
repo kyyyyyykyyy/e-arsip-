@@ -6,7 +6,6 @@ import gsap from 'gsap';
 const containerRef = ref(null);
 let renderer, scene, camera, animationFrameId;
 
-// Variabel Mouse Parallax
 let mouseX = 0;
 let mouseY = 0;
 let targetX = 0;
@@ -28,9 +27,9 @@ const onResize = () => {
 };
 
 onMounted(() => {
-    // 1. SETUP SCENE & CAMERA
+    // 1. SETUP SCENE & CAMERA (Tema Terang Putih)
     scene = new THREE.Scene();
-    scene.fog = new THREE.FogExp2(0x020617, 0.05); // Efek kabut elegan
+    scene.fog = new THREE.FogExp2(0xffffff, 0.04); 
     
     camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
     camera.position.set(0, 2, 8);
@@ -41,45 +40,44 @@ onMounted(() => {
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     containerRef.value.appendChild(renderer.domElement);
 
-    // 3. SETUP CAHAYA (NAVY & GOLD)
-    scene.add(new THREE.AmbientLight(0x1e293b, 0.8));
+    // 3. SETUP CAHAYA (Khaki Tua Kehijauan & Abu-Abu)
+    scene.add(new THREE.AmbientLight(0xffffff, 1.2));
     
-    const dirLight = new THREE.DirectionalLight(0xf59e0b, 3);
+    const dirLight = new THREE.DirectionalLight(0x5d6b47, 3);
     dirLight.position.set(5, 10, 5);
     scene.add(dirLight);
     
-    const pointLight1 = new THREE.PointLight(0x3b82f6, 8, 20);
+    const pointLight1 = new THREE.PointLight(0x4a553c, 6, 20);
     pointLight1.position.set(-5, 0, -5);
     scene.add(pointLight1);
     
-    const pointLight2 = new THREE.PointLight(0x0ea5e9, 5, 15);
+    const pointLight2 = new THREE.PointLight(0x606e4e, 4, 15);
     pointLight2.position.set(0, -5, 0);
     scene.add(pointLight2);
 
-    // 4. OBJEK: LEMARI ARSIP PUSAT
+    // 4. OBJEK: LEMARI ARSIP PUSAT (Abu-abu Rokok Solid)
     const cabinetGeo = new THREE.BoxGeometry(2, 3, 2);
     const cabinetMat = new THREE.MeshPhysicalMaterial({
-        color: 0x0f172a, metalness: 0.9, roughness: 0.1,
+        color: 0x9ca3af, metalness: 0.7, roughness: 0.2,
         clearcoat: 1.0, clearcoatRoughness: 0.1,
-        emissive: 0xfbbf24, emissiveIntensity: 0.1
+        emissive: 0x4a553c, emissiveIntensity: 0.15 // Sedikit nyala Khaki
     });
     const cabinet = new THREE.Mesh(cabinetGeo, cabinetMat);
     scene.add(cabinet);
 
-    // 5. OBJEK: FOLDER HOLOGRAM MELAYANG
+    // 5. OBJEK: FOLDER HOLOGRAM MELAYANG (Khaki Kehijauan)
     const foldersGroup = new THREE.Group();
     const folderGeo = new THREE.BoxGeometry(1.2, 0.8, 0.05);
     const folderMat = new THREE.MeshPhysicalMaterial({
-        color: 0x38bdf8, transparent: true, opacity: 0.4,
+        color: 0x5d6b47, transparent: true, opacity: 0.4,
         roughness: 0.1, transmission: 0.9, thickness: 0.5,
-        emissive: 0x0ea5e9, emissiveIntensity: 0.5, wireframe: false
+        emissive: 0x4a553c, emissiveIntensity: 0.3, wireframe: false
     });
 
     for(let i = 0; i < 12; i++) {
         const angle = (i / 12) * Math.PI * 2;
         const radius = 3.5 + Math.random();
         const folder = new THREE.Mesh(folderGeo, folderMat);
-        // Buat beberapa folder jadi wireframe (garis-garis digital)
         if (i % 3 === 0) folder.material = folderMat.clone();
         if (i % 3 === 0) folder.material.wireframe = true;
         
@@ -89,15 +87,15 @@ onMounted(() => {
     }
     scene.add(foldersGroup);
 
-    // 6. OBJEK: PARTIKEL CAHAYA (DATA STREAMS)
+    // 6. OBJEK: PARTIKEL CAHAYA (Khaki Tua)
     const particleGeo = new THREE.BufferGeometry();
     const particleCount = 2000;
     const posArray = new Float32Array(particleCount * 3);
     for(let i = 0; i < particleCount * 3; i++) {
-        posArray[i] = (Math.random() - 0.5) * 40; // Tersebar dalam radius 40
+        posArray[i] = (Math.random() - 0.5) * 40; 
     }
     particleGeo.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-    const particleMat = new THREE.PointsMaterial({ size: 0.05, color: 0xf59e0b, transparent: true, opacity: 0.8 });
+    const particleMat = new THREE.PointsMaterial({ size: 0.05, color: 0x4a553c, transparent: true, opacity: 0.8 });
     const particles = new THREE.Points(particleGeo, particleMat);
     scene.add(particles);
 
@@ -136,7 +134,6 @@ onMounted(() => {
     animate();
 });
 
-// BERSIHKAN MEMORI SAAT PINDAH HALAMAN
 onBeforeUnmount(() => {
     cancelAnimationFrame(animationFrameId);
     window.removeEventListener('mousemove', onMouseMove);
@@ -146,10 +143,9 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-    <div class="absolute inset-0 w-full h-full bg-slate-950 -z-10 overflow-hidden">
+    <div class="absolute inset-0 w-full h-full bg-white -z-10 overflow-hidden">
         <div ref="containerRef" class="w-full h-full"></div>
-        
-        <div class="absolute inset-0 bg-gradient-to-r from-slate-950 via-transparent to-slate-950 pointer-events-none opacity-80 z-0"></div>
-        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-slate-950 pointer-events-none z-0"></div>
+        <div class="absolute inset-0 bg-gradient-to-r from-white via-transparent to-white pointer-events-none opacity-80 z-0"></div>
+        <div class="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white pointer-events-none z-0"></div>
     </div>
 </template>

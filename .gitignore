@@ -15,12 +15,22 @@ auth.json
 /public/mix-manifest.json
 /public/fonts-manifest.dev.json
 
+# --- ASSET GAMBAR & MEDIA (TAMBAHAN) ---
+/public/images/*
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+
 # --- STORAGE & LOGS (WAJIB) ---
 /storage/*.key
 /storage/framework/cache/*
 /storage/framework/sessions/*
 /storage/framework/views/*
 /storage/logs/*
+/storage/app/public/*
 !/storage/.gitignore
 !/storage/framework/.gitignore
 !/storage/framework/cache/.gitignore
